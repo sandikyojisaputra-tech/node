@@ -1,33 +1,35 @@
+version: "3.9"
+
 services:
   database:
-    image: mariadb:11
+    image: mariadb:11.4
     container_name: ptero_db
-    restart: always
+    restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       - /srv/pterodactyl/database:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: CHANGE_ME_TOO
+      MYSQL_ROOT_PASSWORD: STRONG_ROOT_PASSWORD
       MYSQL_DATABASE: panel
       MYSQL_USER: pterodactyl
-      MYSQL_PASSWORD: CHANGE_ME
+      MYSQL_PASSWORD: STRONG_DB_PASSWORD
 
-  cache:
+  redis:
     image: redis:7-alpine
     container_name: ptero_redis
-    restart: always
+    restart: unless-stopped
 
   panel:
     image: ghcr.io/pterodactyl/panel:latest
     container_name: ptero_panel
-    restart: always
+    restart: unless-stopped
+
     depends_on:
       - database
-      - cache
+      - redis
 
     ports:
       - "80:80"
-      - "443:443"
 
     volumes:
       - /srv/pterodactyl/var:/app/var
@@ -36,9 +38,9 @@ services:
       - /srv/pterodactyl/certs:/etc/letsencrypt
 
     environment:
-      APP_URL: https://pterodactyl.example.com
-      APP_TIMEZONE: UTC
-      APP_SERVICE_AUTHOR: noreply@example.com
+      APP_URL: http://localhost
+      APP_TIMEZONE: Asia/Jakarta
+      APP_SERVICE_AUTHOR: admin@example.com
       APP_ENV: production
       APP_DEBUG: "false"
 
@@ -46,22 +48,13 @@ services:
       DB_PORT: 3306
       DB_DATABASE: panel
       DB_USERNAME: pterodactyl
-      DB_PASSWORD: CHANGE_ME
+      DB_PASSWORD: STRONG_DB_PASSWORD
 
       CACHE_DRIVER: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
 
-      REDIS_HOST: cache
-
-      MAIL_MAILER: smtp
-      MAIL_FROM_ADDRESS: noreply@example.com
-      MAIL_FROM_NAME: Pterodactyl
-      MAIL_HOST: mail
-      MAIL_PORT: 1025
-      MAIL_USERNAME: ""
-      MAIL_PASSWORD: ""
-      MAIL_ENCRYPTION: tls
+      REDIS_HOST: redis
 
 networks:
   default:
